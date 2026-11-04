@@ -84,7 +84,7 @@ export default function Home() {
                   <span className="tile-name">{c.name}</span>
                   <span className="tile-desc">{c.desc}</span>
                   <span className="tile-foot">
-                    {c.href ? "바로 만들기" : "준비 중"}
+                    {c.href ? "시작하기" : "준비 중"}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12h14M13 6l6 6-6 6" />
                     </svg>

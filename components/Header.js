@@ -17,7 +17,7 @@ export default function Header() {
       <div className="wrap">
         <Link href="/" className="logo">
           <Image src={logo} alt="프롬프트 레시피" className="logo-img" loading="eager" />
-           <small>AI 프롬프트 가이드북</small>
+           <small>AI 프롬프트 레시피북</small>
         </Link>
         <nav className="nav" aria-label="주요 메뉴">
           {NAV.map((item) => (

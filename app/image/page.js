@@ -6,8 +6,7 @@ import { TYPES, STYLES, BGS, RATIOS, PROVIDERS } from "@/lib/options";
 import { buildPrompt } from "@/lib/buildPrompt";
 import { RadioGroup, SelectField } from "@/components/OptionGroup";
 import PromptBox from "@/components/PromptBox";
-
-const MEMO_PLACEHOLDER = "예: 카페홍보용 프로필, 따듯한 분위기";
+import ShareMenu from "@/components/ShareMenu";
 
 export default function ImageBuilder() {
   const [type, setType] = useState(TYPES[0].id);
@@ -21,10 +20,13 @@ export default function ImageBuilder() {
   const [error, setError] = useState("");
 
   const providerName = PROVIDERS.find((p) => p.id === provider).name;
+  // 고른 용도에 맞는 예시를 입력칸에 보여줘요
+  const memoPlaceholder = TYPES.find((t) => t.id === type).placeholder;
   const basePrompt = useMemo(
     () => buildPrompt({ type, style, bg, ratio, memo }),
     [type, style, bg, ratio, memo]
   );
+  const output = ai ? ai.text : basePrompt;
 
   // 옵션을 바꾸면 AI 결과를 지우고 기본 프롬프트로 돌아가요
   const withReset = (setter) => (value) => {
@@ -42,7 +44,7 @@ export default function ImageBuilder() {
 
   async function refineWithAI() {
     if (!memo.trim()) {
-      setError(`다듬을 내용을 한 줄 적어 주세요. ${MEMO_PLACEHOLDER}`);
+      setError(`다듬을 내용을 한 줄 적어 주세요. ${memoPlaceholder}`);
       document.getElementById("memo")?.focus();
       return;
     }
@@ -127,7 +129,7 @@ export default function ImageBuilder() {
               className="field-input"
               type="text"
               maxLength={200}
-              placeholder={MEMO_PLACEHOLDER}
+              placeholder={memoPlaceholder}
               value={memo}
               onChange={(e) => withReset(setMemo)(e.target.value)}
             />
@@ -142,7 +144,7 @@ export default function ImageBuilder() {
               onChange={setProvider}
               options={PROVIDERS.map((p) => ({ value: p.id, label: p.name }))}
             />
-            <button type="button" className="btn-primary" onClick={refineWithAI} disabled={loading}>
+            <button type="button" className="btn-primary" onClick={refineWithAI} disabled={loading || !memo.trim()} aria-busy={loading}>
               {loading ? "다듬는 중…" : "프롬프트 다듬기"}
             </button>
             {error && <p className="error" role="alert">{error}</p>}
@@ -151,9 +153,12 @@ export default function ImageBuilder() {
       </div>
 
       <aside className="panel result" aria-label="완성된 프롬프트">
-        <h2 className="result-title">완성된 프롬프트</h2>
+        <div className="result-head">
+          <h2 className="result-title">완성된 프롬프트</h2>
+          <ShareMenu text={output} disabled={loading} />
+        </div>
         <PromptBox
-          text={ai ? ai.text : basePrompt}
+          text={output}
           badge={ai ? `${ai.by}가 다듬은 프롬프트` : "자동 생성 프롬프트"}
           loading={loading}
           onReset={ai ? () => setAi(null) : null}

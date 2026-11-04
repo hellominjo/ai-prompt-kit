@@ -115,7 +115,7 @@ alter table prompt_logs enable row level security;
   "style": "자연스러운 실사",
   "bg": "아이보리 스튜디오",
   "ratio": "1:1 | 16:9 | 9:16",
-  "memo": "카페홍보용 프로필, 따듯한 분위기"
+  "memo": "카페홍보용 프로필, 따뜻한 분위기"
 }
 ```
 
