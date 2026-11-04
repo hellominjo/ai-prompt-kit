@@ -1,9 +1,24 @@
 import "./globals.css";
 import Header from "@/components/Header";
+import { SITE_URL, INDEXABLE } from "@/lib/site";
 
+// 하위 페이지는 title만 주면 "○○ | PROMKIT"이 되고, canonical·og는 각 페이지에서 덮어써요
 export const metadata = {
-  title: "AI 프롬프트 레시피",
-  description: "필요한 순간, 꺼내 쓰는 AI 프롬프트. 옵션을 고르고 한 줄만 적으면 완성돼요.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "AI 프롬프트 가이드북 | PROMKIT",
+    template: "%s | PROMKIT",
+  },
+  description:
+    "AI 프롬프트 가이드북 PROMKIT. 글쓰기, 취업, 업무, 학습 등 상황별 ChatGPT 프롬프트 예시를 살펴보고 나만의 AI 프롬프트를 만들어 보세요.",
+  robots: { index: INDEXABLE, follow: INDEXABLE },
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    title: "AI 프롬프트 가이드북 | PROMKIT",
+    description: "상황별 AI 프롬프트를 찾고 직접 만드는 프롬프트 가이드북",
+    url: "/",
+  },
 };
 
 export default function RootLayout({ children }) {

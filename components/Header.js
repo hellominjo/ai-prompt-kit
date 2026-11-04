@@ -3,11 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import logo from "@/app/image/logo.png";
+import logo from "@/app/_assets/logo.png";
 
 const NAV = [
-  { href: "/", label: "Home" }
+  { href: "/", label: "Home" },
+  { href: "/guide", label: "Guide" },
 ];
+
+// 홈은 정확히 같을 때만, 나머지는 하위 주소(/guide/…)까지 현재 메뉴로 표시해요
+const isCurrent = (pathname, href) =>
+  href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
 export default function Header() {
   const pathname = usePathname();
@@ -24,7 +29,7 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              aria-current={pathname === item.href ? "page" : undefined}
+              aria-current={isCurrent(pathname, item.href) ? "page" : undefined}
             >
               {item.label}
             </Link>

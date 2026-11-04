@@ -1,4 +1,4 @@
-# AI 프롬프트 레시피
+# AI 프롬프트 레시피북
 
 > 필요한 순간, 바로 꺼내 쓰는 AI 프롬프트
 
@@ -7,11 +7,15 @@
 
 ## 주요 기능
 
-- **작업 카테고리 검색** — 이미지, 글쓰기, 업무, 학습, 일상, 콘텐츠 (현재 `AI 이미지`만 제공, 나머지는 준비 중)
-- **AI 이미지 프롬프트 빌더** (`/image`)
-  - 용도: 프로필 사진 / 블로그 썸네일 / 상품 홍보 이미지
-  - 스타일·배경·비율 선택 + 한 줄 요청
-  - 원클릭 복사
+- **작업 카테고리 검색** — 이미지, 글쓰기, 업무, 학습, 일상, 콘텐츠
+- **상황별 프롬프트 빌더** (`/prompts/...`)
+  - `/prompts/image` — AI 이미지: 프로필 사진 / 블로그 썸네일 / 상품 홍보 이미지
+  - `/prompts/writing` — AI 글쓰기: 블로그 포스팅 / 자기소개서 / 이메일
+  - `/prompts/business` — AI 업무: 보고서 / 회의록 / 기획서
+  - `/prompts/study` — AI 학습: 개념 요약 / 시험 대비 문제 / 외국어 회화
+  - `/prompts/life` — AI 일상: 여행 계획 / 요리 추천 / 일정 계획
+  - `/prompts/content` — AI 콘텐츠: 유튜브 대본 / 인스타그램 게시물 / 카드뉴스 기획
+  - 옵션 선택 + 한 줄 요청, 원클릭 복사
 - **AI로 다듬기** — Claude, ChatGPT, Gemini 중 선택해 프롬프트 고도화
 - **사용량 제한** — Supabase에 요청을 기록하고 IP(SHA-256 해시)당 하루 횟수를 제한
 
@@ -32,21 +36,32 @@ ai-prompt-kit/
 │   ├── layout.js            # 공통 레이아웃 (헤더·푸터·메타데이터)
 │   ├── page.js              # 홈: 카테고리 검색 & 이용 방법
 │   ├── globals.css          # 전역 스타일
-│   ├── image/
-│   │   ├── page.js          # AI 이미지 프롬프트 빌더
-│   │   └── logo.png         # 헤더 로고
+│   ├── prompts/
+│   │   └── [recipe]/page.js # /prompts/image, /prompts/writing … 작업별 빌더 (lib/recipes에 등록된 작업만)
+│   ├── _assets/logo.png     # 헤더 로고
 │   └── api/
 │       └── refine/route.js  # POST /api/refine — AI 프롬프트 다듬기
 ├── components/
 │   ├── Header.js            # 상단 헤더 / 내비게이션
 │   ├── CategoryIcon.js      # 카테고리 아이콘 (SVG)
-│   ├── OptionGroup.js       # RadioGroup, SelectField
-│   └── PromptBox.js         # 결과 표시 & 복사 버튼
+│   ├── OptionGroup.js       # RadioGroup, SelectField, TextField, FIELDS 정의대로 그리는 OptionFields
+│   ├── PromptBuilder.js     # 빌더 화면 공통 틀 (소개·AI로 다듬기·결과)
+│   ├── PromptBox.js         # 결과 표시 & 복사 버튼
+│   └── ShareMenu.js         # 복사 / 다른 AI에서 열기 메뉴
 ├── lib/
 │   ├── ai.js                # Claude / GPT / Gemini 호출 (게이트웨이 경유)
-│   ├── buildPrompt.js       # 기본 프롬프트 생성 & AI 시스템 프롬프트
+│   ├── fields.js            # FIELDS 정의 도우미 (기본값·서버 값 검사)
+│   ├── recipes/             # 작업별 화면 문구·옵션(FIELDS)·기본 프롬프트·AI 시스템 프롬프트
+│   │   ├── index.js         # 레시피 목록 (API에서 사용)
+│   │   ├── image.js         # AI 이미지
+│   │   ├── writing.js       # AI 글쓰기
+│   │   ├── business.js      # AI 업무
+│   │   ├── study.js         # AI 학습
+│   │   ├── life.js          # AI 일상
+│   │   └── content.js       # AI 콘텐츠
+│   ├── korean.js            # 을/를 같은 한국어 도우미
 │   ├── categories.js        # 홈 카테고리 & 이용 단계
-│   ├── options.js           # 용도·스타일·배경·비율·AI 옵션
+│   ├── options.js           # AI 선택지 (Claude·ChatGPT·Gemini)
 │   └── supabase.js          # 사용 기록 저장 & 일일 횟수 조회
 ├── public/                  # 정적 파일
 ├── .env.example             # 환경변수 예시
@@ -110,6 +125,7 @@ alter table prompt_logs enable row level security;
 
 ```json
 {
+  "recipe": "image | writing | business | study | life | content",
   "provider": "claude | gpt | gemini",
   "type": "profile | thumb | product",
   "style": "자연스러운 실사",
@@ -127,5 +143,6 @@ alter table prompt_logs enable row level security;
 | `500` | 서버 환경변수 누락 |
 | `502` | AI 응답 실패 |
 
-옵션 값은 `lib/options.js`에 정의된 값만 허용되며, `memo`는 최대 200자입니다.
+위 예시는 `image` 기준이며, 다른 레시피는 각 파일의 `FIELDS`에 정의된 옵션 id(예: `writing`은 `type`, `style`, `purpose`, `length`)와 `memo`를 보냅니다.
+옵션 값은 `lib/recipes/`에 정의된 값만 허용되며, `memo`는 최대 200자입니다.
 

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { refine, missingEnv } from "@/lib/ai";
-import { TYPES, STYLES, BGS, RATIOS, PROVIDERS } from "@/lib/options";
-import { SYSTEM_PROMPT, buildRefineInput } from "@/lib/buildPrompt";
+import { PROVIDERS } from "@/lib/options";
+import { RECIPES } from "@/lib/recipes";
+import { parseOptions } from "@/lib/fields";
 import { countToday, logPrompt } from "@/lib/supabase";
 
 const DAILY_LIMIT = Number(process.env.DAILY_LIMIT ?? 20);
@@ -16,17 +17,17 @@ export async function POST(req) {
     return fail("요청 형식이 올바르지 않아요.", 400);
   }
 
-  const { provider, type, style, bg, ratio } = body;
+  const { provider } = body;
+  const recipe = Object.hasOwn(RECIPES, body.recipe) ? RECIPES[body.recipe] : null;
   const memo = String(body.memo ?? "").trim().slice(0, 200);
 
   // 화면에 있는 값만 허용
+  if (!recipe) return fail("지원하지 않는 작업이에요.", 400);
   if (!PROVIDERS.some((p) => p.id === provider)) return fail("AI를 다시 선택해 주세요.", 400);
-  if (!TYPES.some((t) => t.id === type) || !STYLES.includes(style) ||
-      !BGS.includes(bg) || !RATIOS.some((r) => r.value === ratio)) {
-    return fail("옵션 값이 올바르지 않아요. 새로고침 후 다시 시도해 주세요.", 400);
-  }
+  const opts = parseOptions(recipe.FIELDS, body);
+  if (!opts) return fail("옵션 값이 올바르지 않아요. 새로고침 후 다시 시도해 주세요.", 400);
 
-  if (!memo) return fail("다듬을 내용을 한 줄 적어 주세요. 예: 카페홍보용 프로필, 따듯한 분위기", 400);
+  if (!memo) return fail("다듬을 내용을 한 줄 적어 주세요.", 400);
 
   const missing = missingEnv(provider);
   if (missing.length) return fail(`서버에 ${missing.join(", ")} 값이 설정되지 않았어요.`, 500);
@@ -39,10 +40,11 @@ export async function POST(req) {
   }
 
   try {
-    const input = buildRefineInput({ type, style, bg, ratio, memo });
-    const result = (await refine(provider, SYSTEM_PROMPT, input)).trim();
+    const result = (await refine(provider, recipe.SYSTEM_PROMPT, recipe.buildRefineInput({ ...opts, memo }))).trim();
     if (!result) throw new Error("빈 응답");
 
+    // 테이블에 있는 열만 기록해요 (글쓰기는 bg·ratio가 비어 있어요)
+    const { type, style, bg, ratio } = opts;
     await logPrompt({ ip_hash: ipHash, provider, type, style, bg, ratio, memo, result });
     return NextResponse.json({ prompt: result });
   } catch (err) {
